@@ -22,3 +22,12 @@ ffmpeg is noisy, there's probably a way to quiet the input.
 Eventually we should be able to stream video
 https://stackoverflow.com/questions/60812501/stream-video-frames-directly-to-youtube-in-python
 https://abhitronix.github.io/vidgear/latest/help/writegear_ex/#using-writegears-compression-mode-for-youtube-live-streaming
+
+
+Eventually get audio in there
+https://github.com/abhiTronix/vidgear/issues/15
+  
+  
+  
+  
+  29 default
