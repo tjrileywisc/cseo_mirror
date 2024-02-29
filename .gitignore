@@ -1,5 +1,7 @@
 *.mp3
 *.mpeg
+client_secret*.json
+.DS_Store
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
