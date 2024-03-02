@@ -20,4 +20,4 @@ jobs:
       - name: Run code
         env:
           YOUTUBE_CREDS: ${{ secrets.YOUTUBE_CREDS }}
-        run: python3 main.py -p -c $YOUTUBE_CREDS
+        run: python3 main.py --production --credentials $YOUTUBE_CREDS
