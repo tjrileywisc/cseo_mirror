@@ -128,7 +128,7 @@ class CSEOMirror:
             return(None)
         
         meeting.filesize = int(res.headers['Content-Length'])
-        with open(filename, 'wb') as f, tqdm(total = meeting.filesize, desc = "Downloading {}".format(filename),
+        with open(meeting.filename, 'wb') as f, tqdm(total = meeting.filesize, desc = "Downloading {}".format(meeting.filename),
                                          unit = "B", unit_scale = True, unit_divisor = 1024, leave = True) as bar:
             for chunk in res.iter_content(1024*32):
               if chunk:
