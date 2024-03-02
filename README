@@ -1,33 +1,3 @@
-Look at webpage
-- Check for new upload. Meetings are timestamped, you should be able to confirm that something is new since the last crontab. Maybe this would be an issue if they post a meeting very late.
+CSEO Mirror
 
-- Get upload metadata
-There is a <iframe> in the page source that has the master.m3u8 file which has the same URL of the transport stream .ts file
-
-For example:
-
-https://telvuevod-secure.akamaized.net/vodhls/vod_player/249/media/856528/1708567600/master.m3u8
-
-And then an actual .ts file. I will have to learn how to detect the last one
-https://telvuevod-secure.akamaized.net/vodhls/vod_player/249/media/856528/1708567600/seg-9-f1-v1-a1.ts
-
-I can pass one of these files to ffmpeg to strip the audio. That's generally helpful:
-wget -O- https://telvuevod-secure.akamaized.net/vodhls/vod_player/249/media/856528/1708567600/seg-9-f1-v1-a1.ts | ffmpeg -i - output.mp3
-
-and I can combine multiple files with ffmpeg:
-ffmeg -i output.mp3 -i output2.mp3 -filter_complex "[0:a][1:a]concat=n=2:v=0:a=1" combined.mp3
-
-ffmpeg is noisy, there's probably a way to quiet the input.
-
-Eventually we should be able to stream video
-https://stackoverflow.com/questions/60812501/stream-video-frames-directly-to-youtube-in-python
-https://abhitronix.github.io/vidgear/latest/help/writegear_ex/#using-writegears-compression-mode-for-youtube-live-streaming
-
-
-Eventually get audio in there
-https://github.com/abhiTronix/vidgear/issues/15
-  
-  
-  
-  
-  29 default
+Backup of public meetings for personal time shifted research use

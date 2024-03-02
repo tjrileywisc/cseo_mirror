@@ -18,39 +18,8 @@ from google.auth.transport.requests import Request
 from googleapiclient.discovery import Resource
 
 from pprint import pprint
-from typing import List, Dict
+from typing import Dict, List
 
-class YoutubeClient:
-    def __init__(self, youtube_client: Resource):
-        self.client = youtube_client
-        
-    def get_youtube_playlists(self) -> Dict:
-        request = self.client.playlists().list(part="snippet",mine=True,maxResults=20)
-        response = request.execute()
-        output = {}
-        for p in response['items']:
-            output[p['snippet']['title']] = p['id']
-        return(output)
-    
-    def upload_video(self, meeting: PublicMeeting):
-        payload={"snippet": {"title": meeting.name,
-                             "description": "Copy for personal time-shifted research use"},
-                 "status": {"privacyStatus": "private"}}
-        
-        request = self.client.videos().insert(part="snippet,status", body=payload,
-                                      media_body=MediaFileUpload(meeting.filename, resumable=True, chunksize=256*1024))
-        
-        response = None
-        bar = tqdm(total = video['filesize'], desc = "Uploading {}".format(video['filename']),
-                   leave = True, unit = "B", unit_scale = True, unit_divisor = 1024)
-    
-        while response is None:
-            status, response = request.next_chunk()
-            if status:
-                bar.update(256*1024)
-        bar.close()
-        #TODO, get video id to add to playlist print(response)
-    
 class PublicMeeting:
     def __init__(self, video_id: str, name: str, body: str, youtube_playlists: Dict):
         self.video_id = video_id
@@ -74,8 +43,44 @@ class PublicMeeting:
             else: return(playlists['City Council Committees (Other)'])
         return(None)
     
-    def.delete_video(self):
+    def delete_video(self):
         os.remove(self.filename)
+class YoutubeClient:
+    def __init__(self, youtube_client: Resource):
+        self.client = youtube_client
+        
+    def get_youtube_playlists(self) -> Dict:
+        request = self.client.playlists().list(part="snippet",mine=True,maxResults=20)
+        response = request.execute()
+        output = {"recent_videos":[]}
+        for p in response['items']:
+            output[p['snippet']['title']] = p['id']
+            
+            latest_item_request = self.client.playlistItems().list(part="snippet",id=p['id'],maxResults=1)
+            latest_item_response = latest_item_request.execute()
+            if latest_item_response['items']:
+                output['recent_videos'].append(latest_item_response['items'][0]['snippet']['title'])
+        
+        return(output)
+    
+    def upload_video(self, meeting: PublicMeeting):
+        payload={"snippet": {"title": meeting.name,
+                             "description": "Copy for personal time-shifted research use"},
+                 "status": {"privacyStatus": "private"}}
+        
+        request = self.client.videos().insert(part="snippet,status", body=payload,
+                                      media_body=MediaFileUpload(meeting.filename, resumable=True, chunksize=256*1024))
+        
+        response = None
+        bar = tqdm(total = video['filesize'], desc = "Uploading {}".format(video['filename']),
+                   leave = True, unit = "B", unit_scale = True, unit_divisor = 1024)
+    
+        while response is None:
+            status, response = request.next_chunk()
+            if status:
+                bar.update(256*1024)
+        bar.close()
+        #TODO, get video id to add to playlist print(response)
 
 class CSEOMirror:
     def __init__(self, args: argparse.Namespace):
@@ -126,7 +131,7 @@ class CSEOMirror:
         with open(filename, 'wb') as f, tqdm(total = meeting.filesize, desc = "Downloading {}".format(filename),
                                          unit = "B", unit_scale = True, unit_divisor = 1024, leave = True) as bar:
             for chunk in res.iter_content(1024*32):
-            if chunk:
+              if chunk:
                 bar.update(len(chunk))
                 f.write(chunk)
                 f.flush()
@@ -134,92 +139,6 @@ class CSEOMirror:
         
     def cleanup(self):
         os.remove(self.youtube_creds_file)
-
-def get_all_video_metadata_old(youtube_playlists: Dict, mirror: CSEOMirror) -> List:
-    video_metadata = []
-    
-    youtube_playlists = get_youtube_playlists(youtube)
-    for k,v in mirror.playlists.items():
-        res = requests.get("{}/{}/playlists/{}".format(mirror.url,mirror.id,v))
-        soup = BeautifulSoup(res.content, features="html.parser")
-        
-        for video in soup.find_all("div", class_="summary"):
-            video_id = video.find_next("a")['href'].split("/")[-1]
-            video_name = video.find_next("p").string
-            filename = "{}.mp4".format(video_name.replace(" ", "_"))
-            playlist_id = match_playlist(youtube_playlists, k, video_name)
-            video_metadata.append({"id": video_id,
-                                   "name": video_name,
-                                   "filename": filename,
-                                   "playlist": playlist_id
-                                   })
-    return(video_metadata)
-def match_playlist_old(playlists: Dict, body_name: str, video_name: str) -> str:
-    if body_name in playlists.keys():
-        return(playlists[body_name])
-    if body_name == "City Council Committees":
-        if "Whole" in video_name: return(playlists['Committee of the Whole'])
-        elif "Economic" in video_name: return(playlists['Economic & Community Development Committee'])
-        elif "Finance" in video_name: return(playlists['Finance Committee'])
-        elif "Licenses" in video_name: return(playlists['Licenses & Franchises Committee'])
-        elif "Debt" in video_name: return(playlists['Long Term Debt Committee'])
-        elif "Ordinances" in video_name: return(playlists['Ordinances & Rules Committee'])
-        elif "Public" in video_name: return(playlists['Public Works & Public Safety Committee'])
-        elif "Veterans" in video_name: return(playlists['Veterans Services Committee'])
-        else: return(playlists['City Council Committees (Other)'])
-    return(None)
-def already_downloaded_old(video: Dict, youtube: Resource) -> bool:
-    request = youtube.playlistItems().list(
-        part="snippet",
-        playlistId=video['playlist'],
-        maxResults=50
-    )
-    response = request.execute()
-    #TODO
-    #When this is in prod, I will be able to test more accurately
-    return(False)
-def download_video_old(mirror: CSEOMirror, video: Dict) -> Dict:
-    res = requests.get("{}/{}/media/{}".format(mirror.url,mirror.id,video['id']))
-    soup = BeautifulSoup(res.content, features="html.parser")
-    download_url = soup.find("meta", property="og:video:url")['content'].replace("connect","videoplayer")
-    
-    download_url = "{}?download_filename={}".format(download_url,video['filename'])
-    
-    res = requests.get(download_url, stream=True)
-    if res.status_code != 200:
-        return(None)
-    
-    size_bytes = int(res.headers['Content-Length'])
-    with open(filename, 'wb') as f, tqdm(total = size_bytes, desc = "Downloading {}".format(filename),
-                                         unit = "B", unit_scale = True, unit_divisor = 1024, leave = True) as bar:
-        for chunk in res.iter_content(1024*32):
-            if chunk:
-                bar.update(len(chunk))
-                f.write(chunk)
-                f.flush()
-        bar.close()
-    
-    video['filename'] = filename
-    video['filesize'] = size_bytes
-    return(video)
-def upload_video_old(youtube: Resource, video: Dict) -> None:
-    payload={"snippet": {"title": video['name'],
-                         "description": video['name']},
-             "status": {"privacyStatus": "private"}}
-    
-    request = youtube.videos().insert(part="snippet,status", body=payload,
-                                      media_body=MediaFileUpload(video['filename'], resumable=True, chunksize=256*1024))
-    
-    response = None
-    bar = tqdm(total = video['filesize'], desc = "Uploading {}".format(video['filename']), leave = True,
-               unit = "B", unit_scale = True, unit_divisor = 1024)
-    
-    while response is None:
-        status, response = request.next_chunk()
-        if status:
-            bar.update(256*1024)
-    bar.close()
-    print(response)
 
 
 parser = argparse.ArgumentParser()
@@ -246,5 +165,3 @@ mirror.cleanup()
         
 #TODOs
 #Check to see if video has been backedup already
-#https://medium.com/@nathan_149/making-a-fully-automated-youtube-channel-20f2fa57e469
-#Convert creds file to base64 and then store it as a GitHub Actions Secret https://svrooij.io/2021/08/17/github-actions-secret-file/
