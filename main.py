@@ -118,10 +118,10 @@ class CSEOMirror:
         return(public_meetings)
     
     def download_meeting(self, meeting: PublicMeeting):
-        res = requests.get("{}/{}/media/{}".format(self.url, self.player_id, PublicMeeting.video_id))
+        res = requests.get("{}/{}/media/{}".format(self.url, self.player_id, meeting.video_id))
         soup = BeautifulSoup(res.content, features="html.parser")
         download_url = soup.find("meta", property="og:video:url")['content'].replace("connect", "videoplayer")
-        download_url = "{}?download_filename={}".format(download_url, PublicMeeting.filename)
+        download_url = "{}?download_filename={}".format(download_url, meeting.filename)
         
         res = requests.get(download_url, stream=True)
         if res.status_code != 200:
