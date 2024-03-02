@@ -92,7 +92,7 @@ class CSEOMirror:
         self.MAX_UPLOAD_COUNT = settings['MAX_UPLOAD_COUNT']
         
         if args.production:
-            credentials_text = base64.b64decode(args.credentials.encode("ascii")).decode("ascii")
+            credentials_text = base64.b64decode(args.credentials[0].encode("ascii")).decode("ascii")
             open(self.youtube_creds_file, "w").write(credentials_text)
     
     def make_youtube_client(self) -> YoutubeClient:
