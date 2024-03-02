@@ -1,0 +1,17 @@
+---
+MAX_UPLOAD_COUNT: 6
+telvue_url: https://videoplayer.telvue.com/player
+player_id: DczpPLv0_DQxyzqdZyE1r1a19QZz7VoL
+youtube_creds_file: creds.json
+playlists:
+ City Council: 5499
+ City Council Committees: 10088
+ School Committee: 5517
+ Traffic Commission: 5520
+ Zoning Board of Appeals: 5528
+ License Commission: 5510
+ Conservation Commission: 5503
+ Community Preservation Committee: 5501
+ Historical Commission: 5507
+ Board of Survey and Planning: 5496
+ Other Special Municipal Meetings: 5514
