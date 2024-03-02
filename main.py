@@ -21,27 +21,12 @@ from pprint import pprint
 from typing import Dict, List
 
 class PublicMeeting:
-    def __init__(self, video_id: str, name: str, body: str, youtube_playlists: Dict):
+    def __init__(self, video_id: str, name: str, playlist_id: str):
         self.video_id = video_id
         self.name = name
         self.filename = "{}.mp4".format(name.replace(" ", "_"))
-        self.playlist_id = self.match_playlist(body, youtube_playlists)
+        self.playlist_id = playlist_id
         self.filesize = 0
-        
-    def match_playlist(self, body: str, playlists: Dict) -> str:
-        if body in playlists.keys():
-            return(playlists[body])
-        if body == "City Council Committees":
-            if "Whole" in video_name: return(playlists['Committee of the Whole'])
-            elif "Economic" in video_name: return(playlists['Economic & Community Development Committee'])
-            elif "Finance" in video_name: return(playlists['Finance Committee'])
-            elif "Licenses" in video_name: return(playlists['Licenses & Franchises Committee'])
-            elif "Debt" in video_name: return(playlists['Long Term Debt Committee'])
-            elif "Ordinances" in video_name: return(playlists['Ordinances & Rules Committee'])
-            elif "Public" in video_name: return(playlists['Public Works & Public Safety Committee'])
-            elif "Veterans" in video_name: return(playlists['Veterans Services Committee'])
-            else: return(playlists['City Council Committees (Other)'])
-        return(None)
     
     def delete_video(self):
         os.remove(self.filename)
@@ -56,7 +41,7 @@ class YoutubeClient:
         for p in response['items']:
             output[p['snippet']['title']] = p['id']
             
-            latest_item_request = self.client.playlistItems().list(part="snippet",id=p['id'],maxResults=1)
+            latest_item_request = self.client.playlistItems().list(part="snippet",playlistId=p['id'],maxResults=1)
             latest_item_response = latest_item_request.execute()
             if latest_item_response['items']:
                 output['recent_videos'].append(latest_item_response['items'][0]['snippet']['title'])
@@ -80,6 +65,12 @@ class YoutubeClient:
                 bar.update(256*1024)
         bar.close()
         #TODO, get video id to add to playlist print(response)
+        #TODO Add video language to get subtitles
+        
+        payload={"snippet": {"playlistId": meeting.playlist_id,
+                             "resourceId": response.TODO}}
+        request = self.client.playlists().insert(part="snippet", body=payload)
+        response = request.execute()
 
 class CSEOMirror:
     def __init__(self, args: argparse.Namespace):
@@ -100,17 +91,20 @@ class CSEOMirror:
         credentials.refresh(Request())
         return(YoutubeClient(googleapiclient.discovery.build("youtube", "v3", credentials=credentials)))
     
-    def get_all_public_meetings(self, youtube_playlists: Dict) -> List:
+    def get_new_public_meetings(self, youtube_playlists: Dict) -> List:
         public_meetings = []
         for k,v in self.playlists.items():
             res = requests.get("{}/{}/playlists/{}".format(self.url,self.player_id,v))
             soup = BeautifulSoup(res.content, features="html.parser")
             
-            for meeting in soup.find_all("div", class_="summary"):
+            n = len(public_meetings)
+            for meeting in reversed(soup.find_all("div", class_="summary")):
                 video_id = meeting.find_next("a")['href'].split("/")[-1]
                 name = meeting.find_next("p").string
-                public_meetings.append(PublicMeeting(video_id, name, k, youtube_playlists))
-                
+                if name in youtube_playlists['recent_videos']:
+                  break
+                public_meetings.insert(n, PublicMeeting(video_id, name, youtube_playlists[k]))
+            
             if len(public_meetings) > self.MAX_UPLOAD_COUNT:
                 public_meetings = public_meetings[:6]
                 break
@@ -148,10 +142,9 @@ args = parser.parse_args()
 mirror = CSEOMirror(args)
 youtube = mirror.make_youtube_client()
 youtube_playlists = youtube.get_youtube_playlists()
-meeting_metadata = mirror.get_all_public_meetings(youtube_playlists)
+meeting_metadata = mirror.get_new_public_meetings(youtube_playlists)
 
 print("Uploading {} meeting(s)\n{}".format(len(meeting_metadata),[m.name for m in meeting_metadata]))
-
 if not args.production:
     exit(0)
 
