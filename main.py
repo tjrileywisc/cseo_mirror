@@ -72,9 +72,8 @@ class YoutubeClient:
                                       media_body=MediaFileUpload(meeting.filename, resumable=True, chunksize=256*1024))
         
         response = None
-        bar = tqdm(total = video['filesize'], desc = "Uploading {}".format(video['filename']),
+        bar = tqdm(total = meeting.filesize, desc = "Uploading {}".format(meeting.filename),
                    leave = True, unit = "B", unit_scale = True, unit_divisor = 1024)
-    
         while response is None:
             status, response = request.next_chunk()
             if status:
@@ -129,8 +128,8 @@ class CSEOMirror:
         
         meeting.filesize = int(res.headers['Content-Length'])
         with open(meeting.filename, 'wb') as f, tqdm(total = meeting.filesize, desc = "Downloading {}".format(meeting.filename),
-                                         unit = "B", unit_scale = True, unit_divisor = 1024, leave = True) as bar:
-            for chunk in res.iter_content(1024*32):
+                                                     unit = "B", unit_scale = True, unit_divisor = 1024, leave = True) as bar:
+            for chunk in res.iter_content(1024*256):
               if chunk:
                 bar.update(len(chunk))
                 f.write(chunk)
