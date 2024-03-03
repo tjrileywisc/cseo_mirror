@@ -53,13 +53,13 @@ class YoutubeClient:
                              "description": "Copy for personal time-shifted research use"},
                  "status": {"privacyStatus": "private"}}
         
-        request = self.client.videos().insert(part="status, response", body=payload,
+        request = self.client.videos().insert(part="snippet,status", body=payload,
                                       media_body=MediaFileUpload(meeting.filename, resumable=True, chunksize=256*1024))
         
         response = None
         bar = tqdm(total = meeting.filesize, desc = "Uploading {}".format(meeting.filename),
                    leave = True, unit = "B", unit_scale = True, unit_divisor = 1024)
-        yt_id = None
+
         while response is None:
             status, response = request.next_chunk()
             if status:
