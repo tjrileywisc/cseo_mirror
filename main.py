@@ -53,7 +53,7 @@ class YoutubeClient:
                              "description": "Copy for personal time-shifted research use"},
                  "status": {"privacyStatus": "private"}}
         
-        request = self.client.videos().insert(part="id, status, response", body=payload,
+        request = self.client.videos().insert(part="status, response", body=payload,
                                       media_body=MediaFileUpload(meeting.filename, resumable=True, chunksize=256*1024))
         
         response = None
@@ -61,13 +61,14 @@ class YoutubeClient:
                    leave = True, unit = "B", unit_scale = True, unit_divisor = 1024)
         yt_id = None
         while response is None:
-            yt_id, status, response = request.next_chunk()
+            status, response = request.next_chunk()
             if status:
                 bar.update(256*1024)
         bar.close()
+        print(response)
         
         payload={"snippet": {"playlistId": meeting.playlist_id,
-                             "resourceId": yt_id}}
+                             "resourceId": response['id']}}
         request = self.client.playlists().insert(part="snippet", body=payload)
         response = request.execute()
 
