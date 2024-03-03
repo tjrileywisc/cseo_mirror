@@ -53,7 +53,7 @@ class YoutubeClient:
                              "description": "Copy for personal time-shifted research use"},
                  "status": {"privacyStatus": "private"}}
         
-        request = self.client.videos().insert(part="id,status", body=payload,
+        request = self.client.videos().insert(part="id,status,response", body=payload,
                                       media_body=MediaFileUpload(meeting.filename, resumable=True, chunksize=256*1024))
         
         response = None
