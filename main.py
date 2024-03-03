@@ -53,7 +53,7 @@ class YoutubeClient:
                              "description": "Copy for personal time-shifted research use"},
                  "status": {"privacyStatus": "private"}}
         
-        request = self.client.videos().insert(part="snippet,status", body=payload,
+        request = self.client.videos().insert(part="id,status", body=payload,
                                       media_body=MediaFileUpload(meeting.filename, resumable=True, chunksize=256*1024))
         
         response = None
@@ -64,11 +64,9 @@ class YoutubeClient:
             if status:
                 bar.update(256*1024)
         bar.close()
-        #TODO, get video id to add to playlist print(response)
-        #TODO Add video language to get subtitles
         
         payload={"snippet": {"playlistId": meeting.playlist_id,
-                             "resourceId": response.TODO}}
+                             "resourceId": response.id}}
         request = self.client.playlists().insert(part="snippet", body=payload)
         response = request.execute()
 
@@ -106,7 +104,7 @@ class CSEOMirror:
                 public_meetings.insert(n, PublicMeeting(video_id, name, youtube_playlists[k]))
             
             if len(public_meetings) > self.MAX_UPLOAD_COUNT:
-                public_meetings = public_meetings[:6]
+                public_meetings = public_meetings[:self.MAX_UPLOAD_COUNT]
                 break
         return(public_meetings)
     
