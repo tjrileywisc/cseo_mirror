@@ -68,7 +68,7 @@ class YoutubeClient:
         print(response)
         
         payload={"snippet": {"playlistId": meeting.playlist_id,
-                             "resourceId": {"kind":"youtube#video","videoId":response['id']}}
+                             "resourceId": {"kind":"youtube#video","videoId":response['id']}}}
         request = self.client.playlistItems().insert(part="snippet", body=payload)
         response = request.execute()
 
