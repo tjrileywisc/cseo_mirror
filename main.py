@@ -65,7 +65,6 @@ class YoutubeClient:
             if status:
                 bar.update(256*1024)
         bar.close()
-        print(response)
         
         payload={"snippet": {"playlistId": meeting.playlist_id,
                              "resourceId": {"kind":"youtube#video","videoId":response['id']}}}

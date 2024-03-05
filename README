@@ -1,3 +1,14 @@
-CSEO Mirror
+# CSEO Mirror
 
-Backup of public meetings for personal time shifted research use
+Backup of public meetings for personal time shifted research use.
+
+
+
+
+### Helpful Documentation
+- [YouTube Data API Documentation](https://developers.google.com/youtube/v3/docs)
+- [Google API Python Client Documentation](https://googleapis.github.io/google-api-python-client/docs/epy/index.html)
+- [Google OAuth Library Documentation](https://googleapis.dev/python/google-auth-oauthlib/latest/index.html)
+
+### TODO
+- Better progress bar in the console
