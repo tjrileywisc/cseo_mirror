@@ -163,9 +163,6 @@ youtube = mirror.make_youtube_client()
 youtube_playlists = youtube.get_youtube_playlists()
 meeting_metadata = mirror.get_new_public_meetings(youtube_playlists)
 
-mirror.download_meeting(meeting_metadata[0])
-exit(1)
-
 print("Uploading {} meeting(s)\n{}".format(len(meeting_metadata),[m.name for m in meeting_metadata]))
 if not args.production:
     exit(0)
