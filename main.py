@@ -60,10 +60,12 @@ class YoutubeClient:
         bar = tqdm(total = meeting.filesize, desc = "Uploading {}".format(meeting.filename),
                    leave = True, unit = "B", unit_scale = True, unit_divisor = 1024)
 
+        i = 0
         while response is None:
             status, response = request.next_chunk()
-            if status:
-                bar.update(256*1024)
+            i += 1
+            if status and not i % 64:
+                bar.update(1024*256*64)
         bar.close()
         
         payload={"snippet": {"playlistId": meeting.playlist_id,
@@ -77,18 +79,27 @@ class CSEOMirror:
         self.url = settings['telvue_url']
         self.player_id = settings['player_id']
         self.playlists = settings['playlists']
-        self.youtube_creds_file = settings['youtube_creds_file']
+        self.youtube_token_file = settings['youtube_token_file']
+        self.client_secrets_file = settings['client_secrets_file']
         self.MAX_UPLOAD_COUNT = settings['MAX_UPLOAD_COUNT']
         
         if args.production:
-            credentials_text = base64.b64decode(args.credentials[0].encode("ascii")).decode("ascii")
-            open(self.youtube_creds_file, "w").write(credentials_text)
+            token_text = base64.b64decode(args.token[0].encode("ascii")).decode("ascii")
+            open(self.youtube_token_file, "w").write(token_text)
     
     def make_youtube_client(self) -> YoutubeClient:
-        scopes = json.load(open(self.youtube_creds_file, "r"))['scopes']
-        credentials = Credentials.from_authorized_user_file(self.youtube_creds_file, scopes)
+        scopes = json.load(open(self.youtube_token_file, "r"))['scopes']
+        credentials = Credentials.from_authorized_user_file(self.youtube_token_file, scopes)
         credentials.refresh(Request())
         return(YoutubeClient(googleapiclient.discovery.build("youtube", "v3", credentials=credentials)))
+    
+    def refresh_youtube_token(self) -> None:
+        scopes = json.load(open(self.youtube_token_file, "r"))['scopes']
+        flow = google_auth_oauthlib.flow.InstalledAppFlow.from_client_secrets_file(self.client_secrets_file, scopes)
+        credentials = flow.run_local_server()
+        open(self.youtube_token_file, "w").write(credentials.to_json())
+        print("New token file created, upload the following to GHA Secrets:\n{}"
+              .format(base64.b64encode(credentials.to_json().encode("ascii")).decode("ascii")))
     
     def get_new_public_meetings(self, youtube_playlists: Dict) -> List:
         public_meetings = []
@@ -122,31 +133,43 @@ class CSEOMirror:
         meeting.filesize = int(res.headers['Content-Length'])
         with open(meeting.filename, 'wb') as f, tqdm(total = meeting.filesize, desc = "Downloading {}".format(meeting.filename),
                                                      unit = "B", unit_scale = True, unit_divisor = 1024, leave = True) as bar:
+            i = 0
             for chunk in res.iter_content(1024*256):
-              if chunk:
-                bar.update(len(chunk))
-                f.write(chunk)
-                f.flush()
+                if chunk:
+                    i += 1
+                    if not i % 64:
+                        bar.update(1024*256*64)
+                    f.write(chunk)
+                    f.flush()
             bar.close()
         
     def cleanup(self):
-        os.remove(self.youtube_creds_file)
+        os.remove(self.youtube_token_file)
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--credentials', nargs=1)
+parser.add_argument('--token', nargs=1)
 parser.add_argument('--production', action="store_true")
+parser.add_argument('--refresh', action="store_true")
 args = parser.parse_args()
 
 mirror = CSEOMirror(args)
+
+if args.refresh:
+  mirror.refresh_youtube_token()
+  exit(0)
+
 youtube = mirror.make_youtube_client()
 youtube_playlists = youtube.get_youtube_playlists()
 meeting_metadata = mirror.get_new_public_meetings(youtube_playlists)
 
+mirror.download_meeting(meeting_metadata[0])
+exit(1)
+
 print("Uploading {} meeting(s)\n{}".format(len(meeting_metadata),[m.name for m in meeting_metadata]))
 if not args.production:
     exit(0)
-
+    
 for meeting in meeting_metadata:
     mirror.download_meeting(meeting)
     youtube.upload_video(meeting)

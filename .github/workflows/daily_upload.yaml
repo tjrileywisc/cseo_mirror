@@ -19,5 +19,5 @@ jobs:
         run: pip install -r requirements.txt
       - name: Run code
         env:
-          YOUTUBE_CREDS: ${{ secrets.YOUTUBE_CREDS }}
-        run: python3 main.py --production --credentials $YOUTUBE_CREDS
+          YOUTUBE_CREDS: ${{ secrets.YOUTUBE_TOKEN }}
+        run: python3 main.py --production --token $YOUTUBE_TOKEN

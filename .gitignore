@@ -1,6 +1,8 @@
 *.mp3
 *.mpeg
-client_secret*.json
+creds.json
+token.json
+youtube_audit.txt
 .DS_Store
 
 # Byte-compiled / optimized / DLL files
