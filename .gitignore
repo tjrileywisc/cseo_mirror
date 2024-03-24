@@ -1,5 +1,14 @@
+
+# ml models
+*.pt
+
+# audio/video content
 *.mp3
+*.mp4
+*.m4a
 *.mpeg
+*.srt
+
 creds.json
 token.json
 youtube_audit.txt
