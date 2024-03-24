@@ -16,7 +16,9 @@ jobs:
         with:
           python-version: '3.10' 
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: |
+          chmod +x ./deps_install.sh && ./deps_install.sh
+          pip install -r requirements.txt
       - name: Run code
         env:
           YOUTUBE_TOKEN: ${{ secrets.YOUTUBE_TOKEN }}
