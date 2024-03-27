@@ -22,4 +22,10 @@ jobs:
       - name: Run code
         env:
           YOUTUBE_TOKEN: ${{ secrets.YOUTUBE_TOKEN }}
-        run: python3 main.py --production --token $YOUTUBE_TOKEN
+        run: python3 main.py --production --token $YOUTUBE_TOKEN --transcribe
+      
+      - name: archive captions
+        uses: actions/upload-artifact@v4
+        with:
+          name: captions
+          path: *.srt
