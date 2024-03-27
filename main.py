@@ -4,6 +4,7 @@ import os
 import argparse
 import base64
 import json
+from captioning import CaptionExtractor
 
 import google_auth_oauthlib.flow
 import googleapiclient.discovery
@@ -151,6 +152,8 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--token', nargs=1)
 parser.add_argument('--production', action="store_true")
 parser.add_argument('--refresh', action="store_true")
+parser.add_argument('--transcribe', help="transcribe audio to srt format subtitles", action="store_true")
+
 args = parser.parse_args()
 
 mirror = CSEOMirror(args)
@@ -170,6 +173,7 @@ if not args.production:
 for meeting in meeting_metadata:
     mirror.download_meeting(meeting)
     youtube.upload_video(meeting)
+    CaptionExtractor(meeting.filename)
     meeting.delete_video()
         
 mirror.cleanup()
